@@ -1,31 +1,31 @@
-# Environment / secrets
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Build output and caches
+dist/
+build/
+.vite/
+*.tsbuildinfo
+.pytest_cache/
+.patchproof_backups/
+
+# Local databases / generated demo state
+*.db
+demo.db
+*.patchproof-tmp
+
+# Environment files
 .env
 .env.*
 !.env.example
+*.local
 
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-*.egg-info/
-.pytest_cache/
-.coverage
-
-# Node
-node_modules/
-dist/
-.vite/
-
-# IDE / OS
-.vscode/
-.idea/
+# OS / editor
 .DS_Store
 Thumbs.db
-
-# PATCHPROOF runtime artifacts
-.patchproof_backups/
-*.log
-
-# Local agent/runtime files
-.claude/
+.idea/
+.vscode/

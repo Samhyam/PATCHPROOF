@@ -50,6 +50,7 @@ A single configurable base URL (`.env`):
 
 ```
 VITE_API_BASE_URL=http://localhost:8000
+VITE_SCANNER_URL=http://localhost:8100
 ```
 
 All HTTP goes through `src/api/client.ts`; endpoint wrappers live in

@@ -1,52 +1,285 @@
 # PATCHPROOF
 
-### Find it. Prove it. Patch it. Prove the patch.
+> **Don't just find vulnerabilities. Prove they're fixed.**
 
-PATCHPROOF is a closed-loop application security platform that detects vulnerabilities, proves that they are exploitable, applies a targeted remediation, replays the same attack to confirm it is blocked, and runs regression tests to make sure normal functionality still works.
+PATCHPROOF is a closed-loop application-security demo that connects **live vulnerability discovery**, **automated remediation**, **attack replay**, and **regression testing** into one verifiable pipeline.
 
-## The closed loop
+Instead of stopping at *"this looks vulnerable"*, PATCHPROOF asks a stronger question:
+
+**Can we reproduce the vulnerability, patch it, replay the same attack, and prove normal functionality still works?**
 
 ```text
-Person 1 — Scanner
-    ↓
-Find + prove vulnerability
-    ↓ findings
-Person 2 — Remediation Engine
-    ↓
-Patch → replay attack → regression
-    ↓
-PATCH_VERIFIED
-    ↓
-Person 3 — Dashboard
+┌────────────────────┐
+│ Person 1 — SCAN    │
+│ Find + prove       │
+│ real vulnerabilities
+└─────────┬──────────┘
+          │ strict JSON findings contract
+          ▼
+┌────────────────────┐
+│ Person 2 — PATCH   │
+│ Explain + patch    │
+│ replay + regression│
+└─────────┬──────────┘
+          │ verification result
+          ▼
+┌────────────────────┐
+│ Person 3 — VERIFY  │
+│ Live React         │
+│ security dashboard │
+└────────────────────┘
 ```
 
-## What the demo proves
+## Why PATCHPROOF?
 
-The included deliberately vulnerable demo application contains SQL Injection and IDOR / Broken Access Control vulnerabilities. Person 1 discovers and proves them with live exploit replay. Person 2 applies the corresponding remediation, replays the original attack, and runs regression tests. The dashboard presents the complete chain.
+Traditional scanners can produce a finding and leave the developer with a question:
 
-### Supported vulnerability classes
+> **"Is it actually exploitable, and did my fix really work?"**
 
-- SQL Injection → parameterized query remediation
-- IDOR / Broken Access Control → authorization check remediation
+PATCHPROOF closes that loop:
 
-## Components
+**FIND → PROVE → PATCH → REPLAY → REGRESSION → PATCH VERIFIED**
 
-| Component | Role | Technology |
+A patch is not considered successful merely because the source code changed.
+
+The final status is `PATCH_VERIFIED` only when:
+
+1. the original vulnerability is reproduced;
+2. the remediation is applied;
+3. the original attack is replayed against the patched application;
+4. the attack is blocked; and
+5. normal application behaviour still passes regression tests.
+
+---
+
+## Architecture
+
+| Component | Responsibility | Local endpoint |
 |---|---|---|
-| `person1/` | Find + Prove | Python, AST/source analysis, exploit replay |
-| `patchproof-remediation/` | Patch + Verify + Regression | Python, FastAPI, SQLite, pytest |
-| `frontend/` | Live dashboard | React, TypeScript, Vite |
+| **Person 1 — Security Scanner** | Source-code analysis + live exploit proof; emits findings | `http://localhost:8100` |
+| **Person 2 — Remediation Backend** | Patch generation, attack replay, regression testing, final verification | `http://localhost:8000` |
+| **Person 3 — Dashboard** | React UI for scan, findings, patches, evidence and verification | `http://localhost:5173` |
 
-## Run locally
+### Service flow
+
+```text
+                    ┌─────────────────────┐
+                    │   Target vulnerable │
+                    │        app          │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │ PERSON 1 — SCANNER  │
+                    │ Find + Prove        │
+                    │                     │
+                    │ SQL Injection       │
+                    │ IDOR                │
+                    └──────────┬──────────┘
+                               │ findings.json
+                               ▼
+                    ┌─────────────────────┐
+                    │ PERSON 2 — BACKEND  │
+                    │                     │
+                    │ PATCH               │
+                    │    ↓                │
+                    │ REPLAY ATTACK       │
+                    │    ↓                │
+                    │ REGRESSION          │
+                    │    ↓                │
+                    │ PATCH_VERIFIED      │
+                    └──────────┬──────────┘
+                               │ HTTP API
+                               ▼
+                    ┌─────────────────────┐
+                    │ PERSON 3 — DASHBOARD│
+                    │ React + TypeScript  │
+                    └─────────────────────┘
+```
+
+The scanner and remediation engine communicate through a strict JSON finding contract. The frontend communicates with the remediation backend over HTTP.
+
+---
+
+## What the current demo proves
+
+The bundled deliberately vulnerable application contains two vulnerability classes:
+
+### 1. SQL Injection
+
+The demo scanner proves SQL injection by replaying a tautology payload:
+
+```text
+1 OR 1=1
+```
+
+The vulnerable query returns multiple user records instead of the single requested record.
+
+The remediation engine replaces unsafe string concatenation with a parameterized query, then replays the attack.
+
+### 2. Broken Access Control / IDOR
+
+The scanner logs in as one user and requests another user's profile:
+
+```text
+GET /profile/2
+```
+
+The vulnerable application incorrectly returns the victim's private profile.
+
+The remediation engine adds an ownership check and replays the same request.
+
+---
+
+## Verification philosophy
+
+PATCHPROOF deliberately treats these as different states:
+
+```text
+EXPLOITABLE
+    │
+    │ patch
+    ▼
+PATCHED
+    │
+    │ replay original attack
+    ▼
+ATTACK BLOCKED
+    │
+    │ regression tests
+    ▼
+PATCH VERIFIED
+```
+
+This matters because a patch can appear correct while:
+
+- leaving the original exploit path open;
+- breaking legitimate functionality;
+- changing unrelated behaviour; or
+- modifying the wrong source file.
+
+PATCHPROOF therefore makes **verification part of remediation**, not an afterthought.
+
+---
+
+## Technology stack
+
+### Security / backend
+
+- Python
+- FastAPI
+- Python `ast`
+- SQLite
+- FastAPI `TestClient`
+- Pytest
+
+### Frontend
+
+- React 19
+- TypeScript
+- Vite
+- React Router
+- Recharts
+- Lucide React
+
+### Engineering
+
+- Strict JSON contract between scanner and remediation engine
+- HTTP APIs
+- CORS
+- Automated tests
+- Windows one-command launcher
+- Deliberately isolated vulnerable demo application
+
+---
+
+## Repository structure
+
+```text
+PATCHPROOF/
+├── person1/                         # Person 1 — Find + Prove
+│   ├── scanner/
+│   │   ├── api.py                  # Scanner API (:8100)
+│   │   ├── scanner.py              # Scan orchestration
+│   │   ├── sqli.py                 # SQL injection detection/proof
+│   │   ├── idor.py                 # IDOR detection/proof
+│   │   ├── appload.py              # Isolated target-app loading
+│   │   ├── models.py               # Finding contract
+│   │   └── config.py
+│   ├── tests/
+│   ├── vulnerable_app/
+│   ├── findings.json
+│   ├── demo.py
+│   └── requirements.txt
+│
+├── patchproof-remediation/          # Person 2 — Patch + Verify
+│   └── patchproof/
+│       ├── patch-engine/
+│       │   ├── api.py              # Remediation API (:8000)
+│       │   ├── pipeline.py         # End-to-end orchestration
+│       │   ├── patcher.py          # Safe patch rules
+│       │   ├── verifier.py         # Attack replay
+│       │   ├── regression.py       # Regression tests
+│       │   ├── diff_generator.py
+│       │   ├── models.py
+│       │   └── ai_patch.py
+│       ├── vulnerable-app/
+│       ├── sample-findings/
+│       └── tests/
+│
+├── frontend/                        # Person 3 — Dashboard
+│   ├── src/
+│   │   ├── api/
+│   │   ├── pages/
+│   │   ├── context/
+│   │   └── ui/
+│   ├── package.json
+│   └── .env.example
+│
+├── run-all.bat                      # Windows one-click launcher
+├── run-all.ps1                      # Windows PowerShell launcher
+├── SETUP.md
+└── README.md
+```
+
+---
+
+## Quick start
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 18+
+- **Python 3.11+**
+- **Node.js 18+**
+- `pip`
+- `npm`
 
-### Windows one-command launcher
+### 1. Install Person 2
 
-From the repository root:
+```powershell
+cd patchproof-remediation\patchproof
+python -m pip install -r requirements.txt
+cd ..\..
+```
+
+### 2. Install Person 1
+
+```powershell
+cd person1
+python -m pip install -r requirements.txt
+cd ..
+```
+
+### 3. Install the dashboard
+
+```powershell
+cd frontend
+npm install
+cd ..
+```
+
+### 4. Start everything
+
+On Windows:
 
 ```powershell
 .\run-all.bat
@@ -58,62 +291,147 @@ or:
 powershell -ExecutionPolicy Bypass -File .\run-all.ps1
 ```
 
-Then open `http://localhost:5173`. For manual setup and the three-terminal option, see [`SETUP.md`](SETUP.md).
+Then open:
 
-## Demo flow
+**http://localhost:5173**
 
-1. **Run Live Scan** — Person 1 discovers and proves the vulnerabilities.
-2. **Remediate All** — Person 2 generates the real code diff and applies the remediation.
-3. **Verify** — the same attack is replayed against the patched application.
-4. **Regression** — normal functionality is tested.
-5. **PATCH_VERIFIED** — only shown when the attack is blocked and regression tests pass.
-6. **Reset** — restore the intentionally vulnerable demo for another run.
+For manual startup and troubleshooting, see [`SETUP.md`](SETUP.md).
 
-## Testing
+---
 
-Person 1:
+## Run the tests
+
+### Person 1
 
 ```powershell
 cd person1
-py -3 -m pytest -q
+python -m pytest -q
 ```
 
-Person 2:
+### Person 2
 
 ```powershell
 cd patchproof-remediation\patchproof
-py -3 -m pytest -q
+python -m pytest -q
 ```
 
-The completed integration run verified 11 Person 1 tests and 29 Person 2 tests.
+The repository includes automated tests for scanner behaviour, exploit evidence, contract compatibility, patching, verification, regression, and end-to-end remediation.
 
-## Security note
+---
 
-The `vulnerable-app` is intentionally insecure and exists only for local demonstration and testing. **Do not deploy it to the public internet.**
+## API endpoints
 
-No real credentials, API keys, or local `.env` files are included in this repository. Copy `frontend/.env.example` to `frontend/.env` for local configuration when needed.
-
-## Project structure
+### Person 1 — Scanner
 
 ```text
-PATCHPROOF/
-├── person1/
-├── patchproof-remediation/
-├── frontend/
-├── run-all.bat
-├── run-all.ps1
-├── SETUP.md
-└── PROJECT_DESCRIPTION.md
+GET http://localhost:8100/scan
 ```
+
+The live scanner discovers and proves vulnerabilities in the target application and returns structured findings.
+
+### Person 2 — Remediation
+
+```text
+GET  /health
+GET  /samples
+POST /verify
+POST /full-remediation
+POST /regression
+POST /reset
+```
+
+Interactive API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+## Security design
+
+The remediation engine is intentionally conservative.
+
+- Only approved Python files inside the configured vulnerable-app directory can be modified.
+- Path traversal outside the target directory is rejected.
+- Original files are backed up before patching.
+- Patch rules refuse to guess when the expected code structure is not found.
+- Security verification uses the application's real HTTP routing and dependencies through an in-process test client.
+- The final `PATCH_VERIFIED` state requires both attack blocking and regression success.
+- Optional AI patch suggestions are not trusted to decide whether a vulnerability is fixed.
+
+The bundled vulnerable application is **intentionally insecure** and is for local demonstration/testing only. Do not deploy it to a public or production environment.
+
+---
+
+## Environment configuration
+
+The dashboard uses:
+
+```text
+frontend/.env.example
+```
+
+Copy it to `.env` for local development if you need to override the defaults:
+
+```text
+VITE_API_BASE_URL=http://localhost:8000
+VITE_SCANNER_URL=http://localhost:8100
+```
+
+`.env` is intentionally excluded from the repository. Commit `.env.example`, never local secrets or machine-specific configuration.
+
+---
+
+## Demo sequence
+
+For a clean presentation:
+
+```text
+1. Reset Backend
+       ↓
+2. Run Live Scan
+       ↓
+3. Person 1 proves SQL Injection + IDOR
+       ↓
+4. Remediate All
+       ↓
+5. Review the generated diff
+       ↓
+6. Verification
+       ↓
+7. Same attacks are replayed
+       ↓
+8. Regression tests pass
+       ↓
+9. PATCH VERIFIED
+```
+
+**The key demo moment is not the patch.**
+
+It is the proof that the **same attack that worked before the patch no longer works after the patch — without breaking normal functionality.**
+
+---
 
 ## Team architecture
 
-**Person 1 — Find + Prove:** reads application source, discovers vulnerabilities, proves exploitability, and emits the finding contract.
+PATCHPROOF is intentionally divided into three clear responsibilities:
 
-**Person 2 — Explain + Patch + Verify + Regression:** consumes findings, applies safe remediation, replays the attack, runs regression tests, and determines whether the patch is genuinely verified.
+**Person 1 — Security Engineer**  
+Finds and proves vulnerabilities and produces the standardized finding.
 
-**Person 3 — Dashboard:** provides the browser interface for live scanning, findings, remediation, verification, reports, and reset.
+**Person 2 — Remediation / Backend Engineer**  
+Consumes the finding, explains the vulnerability, applies a safe patch, replays the exploit, runs regression tests, and returns the verified result.
 
-## License
+**Person 3 — Frontend Engineer**  
+Turns the complete pipeline into a judge-friendly live dashboard.
 
-No license is currently specified.
+Each component can be tested independently while the complete system demonstrates the end-to-end security loop.
+
+---
+
+## Disclaimer
+
+PATCHPROOF is a security engineering demonstration built around a deliberately vulnerable local application.
+
+Use only against applications and systems you own or are explicitly authorized to test.

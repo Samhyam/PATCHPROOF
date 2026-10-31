@@ -12,7 +12,7 @@ Person 3 frontend →  live dashboard
 
 ## What's in this bundle
 ```
-PATCHPROOF-submission/
+PATCHPROOF/
 ├── person1/                      # Person 1 — scanner (+ scan API)
 ├── patchproof-remediation/
 │   └── patchproof/               # Person 2 — remediation backend + vulnerable demo app
@@ -31,7 +31,7 @@ reinstall them in one step below.
 > isn't found, use `py -3` in the commands below.
 
 ## Install (one time)
-From the `PATCHPROOF-submission` folder:
+From the `PATCHPROOF` folder:
 
 ```bash
 # Person 2 backend
@@ -53,7 +53,7 @@ cd ..
 ## Run
 
 ### Option A — one click (Windows)
-Double-click **`run-all.bat`** in the `PATCHPROOF-submission` folder, or from a terminal:
+Double-click **`run-all.bat`** in the `PATCHPROOF` folder, or from a terminal:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run-all.ps1
 ```
