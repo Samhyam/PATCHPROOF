@@ -1,0 +1,17 @@
+{
+  "id": "VULN-003",
+  "type": "SQL_INJECTION",
+  "severity": "HIGH",
+  "file": "database.py",
+  "line": 92,
+  "description": "The 'role' filter is concatenated directly into SQL in get_users_by_role(), allowing SQL injection via the /users/by-role endpoint.",
+  "vulnerable_code": "query = \"SELECT id, username, full_name FROM users WHERE role='\" + role + \"'\"",
+  "evidence": {
+    "payload": "x' OR '1'='1",
+    "baseline_value": "user",
+    "result": "Unexpected records returned",
+    "endpoint": "/users/by-role",
+    "method": "GET",
+    "parameter": "role"
+  }
+}

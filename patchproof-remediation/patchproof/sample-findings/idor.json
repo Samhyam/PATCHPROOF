@@ -1,0 +1,17 @@
+{
+  "id": "VULN-002",
+  "type": "IDOR",
+  "severity": "HIGH",
+  "file": "app.py",
+  "line": 67,
+  "description": "Any logged-in user can read any other user's profile by changing the user_id in the URL",
+  "vulnerable_code": "def get_profile(user_id: int, current_user: dict = Depends(get_current_user)):",
+  "evidence": {
+    "payload": "GET /profile/2 while logged in as alice (user 1)",
+    "result": "Bob's private profile (email, role) returned with HTTP 200",
+    "endpoint": "/profile/{user_id}",
+    "method": "GET",
+    "attacker": {"username": "alice", "password": "alice123"},
+    "victim_id": 2
+  }
+}

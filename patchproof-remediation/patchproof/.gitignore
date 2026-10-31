@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+vulnerable-app/demo.db
+vulnerable-app/.patchproof_backups/
+*.patchproof-tmp
