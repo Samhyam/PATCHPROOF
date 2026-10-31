@@ -1,17 +1,16 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
-.pytest_cache/
 .venv/
 venv/
-ENV/
 *.egg-info/
-
-# Environment / local configuration
-.env
-.env.local
-.env.*.local
-!.env.example
+.pytest_cache/
+.coverage
 
 # Node
 node_modules/
@@ -28,5 +27,5 @@ Thumbs.db
 .patchproof_backups/
 *.log
 
-# Local/session tooling
+# Local agent/runtime files
 .claude/

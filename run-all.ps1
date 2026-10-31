@@ -3,7 +3,8 @@
 #   Person 1 scanner API : http://localhost:8100
 #   Person 3 frontend    : http://localhost:5173
 #
-# Usage:  right-click > Run with PowerShell, or:  ./run-all.ps1
+# Usage:  double-click run-all.bat  (works even when script execution is blocked), or:
+#         powershell -ExecutionPolicy Bypass -File .\run-all.ps1
 # Requires Python 3.11+ and Node 18+ on PATH, and the one-time installs in SETUP.md.
 
 $root = $PSScriptRoot
@@ -17,7 +18,7 @@ $frontend = Join-Path $root "frontend"
 
 function Start-Svc($title, $cwd, $cmd) {
   Start-Process powershell -ArgumentList @(
-    "-NoExit", "-Command",
+    "-NoExit", "-ExecutionPolicy", "Bypass", "-Command",
     "`$host.UI.RawUI.WindowTitle='$title'; Set-Location '$cwd'; `$env:PYTHONIOENCODING='utf-8'; $cmd"
   )
 }
@@ -29,7 +30,7 @@ Write-Host "Starting Person 1 scanner API (:8100)..."
 Start-Svc "PATCHPROOF Scanner :8100" $person1 "`$env:PATCHPROOF_PROJECT='$backend'; $py -m uvicorn scanner.api:app --port 8100"
 
 Write-Host "Starting Person 3 frontend (:5173)..."
-Start-Svc "PATCHPROOF Frontend :5173" $frontend "npm run dev"
+Start-Svc "PATCHPROOF Frontend :5173" $frontend "npm.cmd run dev"
 
 Write-Host ""
 Write-Host "All three services are launching in separate windows."

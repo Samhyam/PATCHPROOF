@@ -52,12 +52,16 @@ cd ..
 
 ## Run
 
-### Option A — one command (Windows PowerShell)
-From the `PATCHPROOF-submission` folder:
+### Option A — one click (Windows)
+Double-click **`run-all.bat`** in the `PATCHPROOF-submission` folder, or from a terminal:
 ```powershell
-./run-all.ps1
+powershell -ExecutionPolicy Bypass -File .\run-all.ps1
 ```
 It opens three windows (backend :8000, scanner :8100, frontend :5173).
+
+> Running `./run-all.ps1` directly may fail with *"is not digitally signed"* —
+> Windows blocks scripts that came from a downloaded zip. The `.bat` / `-ExecutionPolicy
+> Bypass` form above avoids that for this run only, without changing system settings.
 
 ### Option B — three terminals
 ```bash
